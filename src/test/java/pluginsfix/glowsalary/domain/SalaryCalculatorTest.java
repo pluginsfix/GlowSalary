@@ -3,8 +3,6 @@ package pluginsfix.glowsalary.domain;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SalaryCalculatorTest {
@@ -12,40 +10,30 @@ class SalaryCalculatorTest {
     @Test
     @DisplayName("Базовая зарплата выдаётся при первом получении (streak = 0)")
     void calculatesBaseSalaryForZeroStreak() {
-        GroupSalaryConfig group = new GroupSalaryConfig("default", 150.0, 15.0, 600.0, 7200L);
-        double salary = SalaryCalculator.calculateMoneySalary(group, 0);
-
-        assertThat(salary).isEqualTo(150.0);
+        double salary = SalaryCalculator.calculateMoneySalary(67000.0, 15000.0, 0);
+        assertThat(salary).isEqualTo(67000.0);
     }
 
     @Test
     @DisplayName("Зарплата увеличивается пропорционально количеству полученных выплат")
     void calculatesProgressiveSalary() {
-        GroupSalaryConfig group = new GroupSalaryConfig("default", 150.0, 15.0, 600.0, 7200L);
-        double salaryStreak3 = SalaryCalculator.calculateMoneySalary(group, 3);
-
-        assertThat(salaryStreak3).isEqualTo(195.0);
+        double salaryStreak3 = SalaryCalculator.calculateMoneySalary(67000.0, 15000.0, 3);
+        assertThat(salaryStreak3).isEqualTo(112000.0);
     }
 
     @Test
-    @DisplayName("Размер зарплаты не превышает максимальный лимит группы")
-    void respectsMaxSalaryCap() {
-        GroupSalaryConfig group = new GroupSalaryConfig("default", 150.0, 15.0, 600.0, 7200L);
-        double salaryStreak100 = SalaryCalculator.calculateMoneySalary(group, 100);
-
-        assertThat(salaryStreak100).isEqualTo(600.0);
+    @DisplayName("Расчет зарплаты для донат-ранга")
+    void calculatesRankSalary() {
+        double salaryGrieferStreak2 = SalaryCalculator.calculateMoneySalary(100000.0, 15000.0, 2);
+        assertThat(salaryGrieferStreak2).isEqualTo(130000.0);
     }
 
     @Test
-    @DisplayName("Количество сапфиров растёт с каждым сапфировым получением и ограничено максимумом")
+    @DisplayName("Количество сапфиров растёт с каждым получением")
     void calculatesProgressiveSapphires() {
-        SapphireRewardConfig sapphire = new SapphireRewardConfig(
-            true, 15.0, 1, 1, 10, "entity.player.levelup", List.of("give <player> diamond <amount>")
-        );
-
-        assertThat(SalaryCalculator.calculateSapphireSalary(sapphire, 0)).isEqualTo(1);
-        assertThat(SalaryCalculator.calculateSapphireSalary(sapphire, 2)).isEqualTo(3);
-        assertThat(SalaryCalculator.calculateSapphireSalary(sapphire, 20)).isEqualTo(10);
+        assertThat(SalaryCalculator.calculateSapphireSalary(5, 2, 0)).isEqualTo(5);
+        assertThat(SalaryCalculator.calculateSapphireSalary(5, 2, 1)).isEqualTo(7);
+        assertThat(SalaryCalculator.calculateSapphireSalary(5, 2, 3)).isEqualTo(11);
     }
 
     @Test
@@ -64,18 +52,10 @@ class SalaryCalculatorTest {
     @Test
     @DisplayName("Проверка шанса выпадения сапфиров")
     void checksSapphireChance() {
-        SapphireRewardConfig sapphire = new SapphireRewardConfig(
-            true, 15.0, 1, 1, 10, "entity.player.levelup", List.of()
-        );
-
-        assertThat(SalaryCalculator.shouldGiveSapphires(sapphire, 10.0)).isTrue();
-        assertThat(SalaryCalculator.shouldGiveSapphires(sapphire, 14.99)).isTrue();
-        assertThat(SalaryCalculator.shouldGiveSapphires(sapphire, 15.0)).isFalse();
-        assertThat(SalaryCalculator.shouldGiveSapphires(sapphire, 50.0)).isFalse();
-
-        SapphireRewardConfig disabled = new SapphireRewardConfig(
-            false, 100.0, 1, 1, 10, "", List.of()
-        );
-        assertThat(SalaryCalculator.shouldGiveSapphires(disabled, 0.0)).isFalse();
+        assertThat(SalaryCalculator.shouldGiveSapphires(10.0, 5.0)).isTrue();
+        assertThat(SalaryCalculator.shouldGiveSapphires(10.0, 9.99)).isTrue();
+        assertThat(SalaryCalculator.shouldGiveSapphires(10.0, 10.0)).isFalse();
+        assertThat(SalaryCalculator.shouldGiveSapphires(10.0, 50.0)).isFalse();
+        assertThat(SalaryCalculator.shouldGiveSapphires(0.0, 0.0)).isFalse();
     }
 }

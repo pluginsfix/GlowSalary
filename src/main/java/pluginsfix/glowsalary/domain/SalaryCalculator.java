@@ -4,20 +4,18 @@ public final class SalaryCalculator {
 
     private SalaryCalculator() {}
 
-    public static double calculateMoneySalary(GroupSalaryConfig groupConfig, int moneyStreak) {
-        if (moneyStreak <= 0) {
-            return groupConfig.baseSalary();
+    public static double calculateMoneySalary(double rankBase, double growthPerClaim, int streak) {
+        if (streak <= 0) {
+            return rankBase;
         }
-        double calculated = groupConfig.baseSalary() + (moneyStreak * groupConfig.incrementPerClaim());
-        return Math.min(calculated, groupConfig.maxSalary());
+        return rankBase + ((long) streak * growthPerClaim);
     }
 
-    public static int calculateSapphireSalary(SapphireRewardConfig sapphireConfig, int sapphireStreak) {
-        if (sapphireStreak <= 0) {
-            return sapphireConfig.baseAmount();
+    public static int calculateSapphireSalary(int baseAmount, int growthPerClaim, int streak) {
+        if (streak <= 0) {
+            return baseAmount;
         }
-        long calculated = (long) sapphireConfig.baseAmount() + ((long) sapphireStreak * sapphireConfig.incrementPerClaim());
-        return (int) Math.min(calculated, sapphireConfig.maxAmount());
+        return baseAmount + (streak * growthPerClaim);
     }
 
     public static long calculateRemainingCooldown(long lastClaimEpochSeconds, long cooldownSeconds, long currentEpochSeconds) {
@@ -33,10 +31,10 @@ public final class SalaryCalculator {
         return calculateRemainingCooldown(lastClaimEpochSeconds, cooldownSeconds, currentEpochSeconds) > 0L;
     }
 
-    public static boolean shouldGiveSapphires(SapphireRewardConfig sapphireConfig, double rollPercent) {
-        if (!sapphireConfig.enabled()) {
+    public static boolean shouldGiveSapphires(double chancePercent, double rollPercent) {
+        if (chancePercent <= 0.0) {
             return false;
         }
-        return rollPercent < sapphireConfig.chancePercent();
+        return rollPercent < chancePercent;
     }
 }

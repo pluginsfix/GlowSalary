@@ -44,7 +44,7 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
             case "reload" -> handleReload(sender);
             case "reset" -> handleReset(sender, args);
             case "info" -> handleInfo(sender, args);
-            default -> messageService.sendMessage(sender, "admin.unknown-command");
+            default -> messageService.sendMessage(sender, "unknown-command");
         }
 
         return true;
@@ -52,12 +52,12 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
 
     private void handleClaim(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            messageService.sendMessage(sender, "admin.only-player");
+            messageService.sendMessage(sender, "only-player");
             return;
         }
 
         if (!player.hasPermission("glowsalary.use")) {
-            messageService.sendMessage(sender, "admin.no-permission");
+            messageService.sendMessage(sender, "no-permission");
             return;
         }
 
@@ -65,49 +65,59 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
         switch (outcome) {
             case RewardOutcome.Money money -> {
                 String formattedAmount = formatNumber(money.amount());
-                messageService.sendMessage(player, "salary.money-received", Map.of(
+                messageService.sendMessage(player, "money-received", Map.of(
                     "player", player.getName(),
                     "amount", formattedAmount,
                     "streak", String.valueOf(money.newStreak())
                 ));
             }
             case RewardOutcome.Sapphire sapphire -> {
-                messageService.sendMessage(player, "salary.sapphire-received", Map.of(
+                messageService.sendMessage(player, "sapphire-received", Map.of(
                     "player", player.getName(),
                     "amount", String.valueOf(sapphire.amount()),
                     "streak", String.valueOf(sapphire.newStreak())
                 ));
             }
-            case RewardOutcome.CooldownActive cd -> {
+            case RewardOutcome.Cooldown cd -> {
                 String formattedTime = TimeFormatter.formatSeconds(cd.remainingSeconds());
-                String formattedNext = formatNumber(cd.nextMoneyAmount());
-                messageService.sendMessage(player, "salary.cooldown-active", Map.of(
-                    "time", formattedTime,
-                    "next_amount", formattedNext,
-                    "group", cd.groupName()
-                ));
+                if (cd.isNextSapphire()) {
+                    messageService.sendMessage(player, "not-ready-sapphire", Map.of(
+                        "time", formattedTime,
+                        "amount", String.valueOf(cd.nextSapphireAmount()),
+                        "player", player.getName(),
+                        "rank", cd.rank()
+                    ));
+                } else {
+                    String formattedNext = formatNumber(cd.nextMoneyAmount());
+                    messageService.sendMessage(player, "not-ready-money", Map.of(
+                        "time", formattedTime,
+                        "amount", formattedNext,
+                        "player", player.getName(),
+                        "rank", cd.rank()
+                    ));
+                }
             }
         }
     }
 
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("glowsalary.admin")) {
-            messageService.sendMessage(sender, "admin.no-permission");
+            messageService.sendMessage(sender, "no-permission");
             return;
         }
 
         reloadAction.run();
-        messageService.sendMessage(sender, "admin.reload-success");
+        messageService.sendMessage(sender, "reload-success");
     }
 
     private void handleReset(CommandSender sender, String[] args) {
         if (!sender.hasPermission("glowsalary.admin")) {
-            messageService.sendMessage(sender, "admin.no-permission");
+            messageService.sendMessage(sender, "no-permission");
             return;
         }
 
         if (args.length < 2) {
-            messageService.sendMessage(sender, "admin.unknown-command");
+            messageService.sendMessage(sender, "unknown-command");
             return;
         }
 
@@ -115,7 +125,7 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
         Player target = Bukkit.getPlayer(targetName);
         if (target != null) {
             salaryService.resetPlayer(target.getUniqueId()).thenAccept(success -> {
-                messageService.sendMessage(sender, "admin.reset-success", Map.of("player", target.getName()));
+                messageService.sendMessage(sender, "reset-success", Map.of("player", target.getName()));
             });
             return;
         }
@@ -124,10 +134,10 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
         OfflinePlayer offline = Bukkit.getOfflinePlayer(targetName);
         if (offline.hasPlayedBefore() || offline.isOnline()) {
             salaryService.resetPlayer(offline.getUniqueId()).thenAccept(success -> {
-                messageService.sendMessage(sender, "admin.reset-success", Map.of("player", targetName));
+                messageService.sendMessage(sender, "reset-success", Map.of("player", targetName));
             });
         } else {
-            messageService.sendMessage(sender, "admin.player-not-found", Map.of("player", targetName));
+            messageService.sendMessage(sender, "player-not-found", Map.of("player", targetName));
         }
     }
 
@@ -135,21 +145,21 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
         Player targetPlayer;
         if (args.length > 1) {
             if (!sender.hasPermission("glowsalary.admin")) {
-                messageService.sendMessage(sender, "admin.no-permission");
+                messageService.sendMessage(sender, "no-permission");
                 return;
             }
             targetPlayer = Bukkit.getPlayer(args[1]);
             if (targetPlayer == null) {
-                messageService.sendMessage(sender, "admin.player-not-found", Map.of("player", args[1]));
+                messageService.sendMessage(sender, "player-not-found", Map.of("player", args[1]));
                 return;
             }
         } else {
             if (!(sender instanceof Player player)) {
-                messageService.sendMessage(sender, "admin.only-player");
+                messageService.sendMessage(sender, "only-player");
                 return;
             }
             if (!player.hasPermission("glowsalary.use")) {
-                messageService.sendMessage(sender, "admin.no-permission");
+                messageService.sendMessage(sender, "no-permission");
                 return;
             }
             targetPlayer = player;
@@ -159,10 +169,10 @@ public final class SalaryCommand implements CommandExecutor, TabCompleter {
         long now = Instant.now().getEpochSecond();
         long diff = now - profile.lastClaimEpochSeconds();
 
-        sender.sendMessage(messageService.parse("<prefix><gray>Информация о зарплате игрока <aqua>" + targetPlayer.getName() + "</aqua>:</gray>"));
-        sender.sendMessage(messageService.parse("<gray>• Денежный уровень: <green>#" + profile.moneyStreak() + "</green> (Всего получено: <green>" + formatNumber(profile.totalMoneyClaimed()) + "</green>)</gray>"));
-        sender.sendMessage(messageService.parse("<gray>• Сапфировый уровень: <aqua>#" + profile.sapphireStreak() + "</aqua> (Всего сапфиров: <aqua>" + profile.totalSapphiresClaimed() + "</aqua>)</gray>"));
-        sender.sendMessage(messageService.parse("<gray>• Прошло с последней выплаты: <yellow>" + TimeFormatter.formatSeconds(diff) + "</yellow></gray>"));
+        sender.sendMessage(messageService.format("&#FF7000▶&f Информация о зарплате игрока &#FFC900" + targetPlayer.getName() + "&f:"));
+        sender.sendMessage(messageService.format("&7• Денежный уровень: &#FFC900#" + profile.moneyStreak() + " &7(Всего: &#FFC900" + formatNumber(profile.totalMoneyClaimed()) + " ¤&7)"));
+        sender.sendMessage(messageService.format("&7• Сапфировый уровень: &#fb0fd4#" + profile.sapphireStreak() + " &7(Всего сапфиров: &#fb0fd4" + profile.totalSapphiresClaimed() + " ☀&7)"));
+        sender.sendMessage(messageService.format("&7• Прошло с последней выплаты: &#FF7000" + TimeFormatter.formatSeconds(diff)));
     }
 
     private String formatNumber(double value) {

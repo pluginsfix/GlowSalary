@@ -75,4 +75,4 @@ groups:
 mvn clean package
 ```
 
-Собранный `.jar` файл будет доступен в папке `target/GlowSalary-1.0.3.jar`.
+Собранный `.jar` файл будет доступен в папке `target/GlowSalary-1.0.4.jar`.

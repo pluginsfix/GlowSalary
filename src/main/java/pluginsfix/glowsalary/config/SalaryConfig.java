@@ -2,94 +2,75 @@ package pluginsfix.glowsalary.config;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import pluginsfix.glowsalary.domain.GroupSalaryConfig;
-import pluginsfix.glowsalary.domain.SapphireRewardConfig;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public record SalaryConfig(
-    int configVersion,
-    long defaultCooldownSeconds,
-    int autoSaveIntervalMinutes,
-    SapphireRewardConfig sapphire,
-    Map<String, GroupSalaryConfig> groups
+    long cooldownSeconds,
+    long initialCooldownSeconds,
+    double baseReward,
+    double growthPerClaim,
+    double sapphireChance,
+    int sapphireBaseAmount,
+    int sapphireGrowthPerClaim,
+    String moneyCommand,
+    String sapphireCommand,
+    Map<String, Double> ranks
 ) {
 
     public SalaryConfig {
-        Objects.requireNonNull(sapphire, "sapphire must not be null");
-        Objects.requireNonNull(groups, "groups must not be null");
-        if (groups.isEmpty()) {
-            throw new IllegalArgumentException("At least one group must be configured in 'groups'");
-        }
+        Objects.requireNonNull(moneyCommand, "moneyCommand must not be null");
+        Objects.requireNonNull(sapphireCommand, "sapphireCommand must not be null");
+        Objects.requireNonNull(ranks, "ranks must not be null");
     }
 
     public static SalaryConfig fromYaml(FileConfiguration yaml) {
-        int configVersion = yaml.getInt("config-version", 1);
-        long defaultCooldownSeconds = yaml.getLong("default-cooldown-seconds", 7200L);
-        int autoSaveIntervalMinutes = yaml.getInt("auto-save-interval-minutes", 5);
+        long cooldownSeconds = yaml.getLong("cooldown.seconds", 3600L);
+        long initialCooldownSeconds = yaml.getLong("cooldown.initial-seconds", 3600L);
 
-        ConfigurationSection sapphireSection = yaml.getConfigurationSection("sapphire");
-        SapphireRewardConfig sapphire;
-        if (sapphireSection != null) {
-            boolean enabled = sapphireSection.getBoolean("enabled", true);
-            double chance = sapphireSection.getDouble("chance-percent", 15.0);
-            int baseAmount = sapphireSection.getInt("base-amount", 1);
-            int increment = sapphireSection.getInt("increment-per-claim", 1);
-            int maxAmount = sapphireSection.getInt("max-amount", 10);
-            String sound = sapphireSection.getString("sound", "entity.player.levelup");
-            List<String> rewardCommands = sapphireSection.getStringList("reward-commands");
+        double baseReward = yaml.getDouble("rewards.base", 67000.0);
+        double growthPerClaim = yaml.getDouble("rewards.growth-per-claim", 15000.0);
 
-            sapphire = new SapphireRewardConfig(enabled, chance, baseAmount, increment, maxAmount, sound, rewardCommands);
-        } else {
-            sapphire = new SapphireRewardConfig(false, 0.0, 1, 0, 1, "", List.of());
-        }
+        double sapphireChance = yaml.getDouble("sapphire.chance", 10.0);
+        int sapphireBase = yaml.getInt("sapphire.base-amount", 5);
+        int sapphireGrowth = yaml.getInt("sapphire.growth-per-claim", 2);
 
-        Map<String, GroupSalaryConfig> groupMap = new HashMap<>();
-        ConfigurationSection groupsSection = yaml.getConfigurationSection("groups");
-        if (groupsSection != null) {
-            for (String groupKey : groupsSection.getKeys(false)) {
-                ConfigurationSection sec = groupsSection.getConfigurationSection(groupKey);
-                if (sec == null) {
-                    continue;
-                }
+        String moneyCommand = yaml.getString("commands.money", "eco give %player% %amount%");
+        String sapphireCommand = yaml.getString("commands.sapphire", "p give %player% %amount%");
 
-                double baseSalary = sec.getDouble("base-salary", 100.0);
-                double increment = sec.getDouble("increment-per-claim", 10.0);
-                double maxSalary = sec.getDouble("max-salary", Math.max(baseSalary, 500.0));
-                long cooldown = sec.getLong("cooldown-seconds", 0L);
-                if (cooldown <= 0L) {
-                    cooldown = defaultCooldownSeconds;
-                }
-
-                groupMap.put(groupKey.toLowerCase(), new GroupSalaryConfig(groupKey, baseSalary, increment, maxSalary, cooldown));
+        Map<String, Double> rankMap = new HashMap<>();
+        ConfigurationSection ranksSection = yaml.getConfigurationSection("ranks");
+        if (ranksSection != null) {
+            for (String rankKey : ranksSection.getKeys(false)) {
+                rankMap.put(rankKey.toLowerCase(), ranksSection.getDouble(rankKey));
             }
         }
 
-        if (!groupMap.containsKey("default")) {
-            groupMap.put("default", new GroupSalaryConfig("default", 100.0, 10.0, 500.0, defaultCooldownSeconds));
+        if (!rankMap.containsKey("default")) {
+            rankMap.put("default", baseReward);
         }
 
         return new SalaryConfig(
-            configVersion,
-            defaultCooldownSeconds,
-            autoSaveIntervalMinutes,
-            sapphire,
-            Collections.unmodifiableMap(groupMap)
+            cooldownSeconds,
+            initialCooldownSeconds,
+            baseReward,
+            growthPerClaim,
+            sapphireChance,
+            sapphireBase,
+            sapphireGrowth,
+            moneyCommand,
+            sapphireCommand,
+            Collections.unmodifiableMap(rankMap)
         );
     }
 
-    public GroupSalaryConfig resolveGroup(String groupName) {
-        if (groupName == null) {
-            return groups.getOrDefault("default", groups.values().iterator().next());
+    public double resolveRankBase(String rankName) {
+        if (rankName == null) {
+            return ranks.getOrDefault("default", baseReward);
         }
-        GroupSalaryConfig found = groups.get(groupName.toLowerCase());
-        if (found != null) {
-            return found;
-        }
-        return groups.getOrDefault("default", groups.values().iterator().next());
+        return ranks.getOrDefault(rankName.toLowerCase(), ranks.getOrDefault("default", baseReward));
     }
 }

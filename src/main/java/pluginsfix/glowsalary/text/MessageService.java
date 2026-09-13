@@ -1,68 +1,77 @@
 package pluginsfix.glowsalary.text;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class MessageService {
 
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private String prefix = "<gradient:#38bdf8:#818cf8><b>Зарплата</b></gradient> <dark_gray>»</dark_gray> ";
-    private FileConfiguration messagesYaml;
+    private static final Pattern HEX_PATTERN = Pattern.compile("(?i)(?:#&|&#)([0-9a-fA-F]{6})");
+    private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
+        .character('&')
+        .hexColors()
+        .useUnusualXRepeatedCharacterHexFormat()
+        .build();
 
-    public MessageService(FileConfiguration messagesYaml) {
-        this.messagesYaml = messagesYaml;
-        if (messagesYaml != null && messagesYaml.contains("prefix")) {
-            this.prefix = messagesYaml.getString("prefix", prefix);
-        }
+    private FileConfiguration configYaml;
+
+    public MessageService(FileConfiguration configYaml) {
+        this.configYaml = configYaml;
     }
 
-    public void reload(FileConfiguration newMessagesYaml) {
-        this.messagesYaml = newMessagesYaml;
-        if (newMessagesYaml != null && newMessagesYaml.contains("prefix")) {
-            this.prefix = newMessagesYaml.getString("prefix", prefix);
-        }
+    public void reload(FileConfiguration newConfigYaml) {
+        this.configYaml = newConfigYaml;
     }
 
     public void sendMessage(CommandSender sender, String key, Map<String, String> placeholders) {
-        if (messagesYaml == null) {
+        if (configYaml == null) {
             return;
         }
 
-        if (messagesYaml.isList(key)) {
-            List<String> lines = messagesYaml.getStringList(key);
-            for (String rawLine : lines) {
-                sender.sendMessage(parse(rawLine, placeholders));
-            }
-        } else {
-            String rawLine = messagesYaml.getString(key, "<red>Missing message: " + key + "</red>");
-            sender.sendMessage(parse(rawLine, placeholders));
+        String raw = configYaml.getString("messages." + key, "");
+        if (raw.isEmpty()) {
+            raw = configYaml.getString(key, "&cMissing message: " + key);
         }
+
+        sender.sendMessage(format(raw, placeholders));
     }
 
     public void sendMessage(CommandSender sender, String key) {
         sendMessage(sender, key, Map.of());
     }
 
-    public Component parse(String rawText, Map<String, String> placeholders) {
-        List<TagResolver> resolvers = new ArrayList<>(placeholders.size() + 1);
-        resolvers.add(Placeholder.parsed("prefix", prefix));
-
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            resolvers.add(Placeholder.parsed(entry.getKey(), entry.getValue()));
+    public Component format(String raw, Map<String, String> placeholders) {
+        if (raw == null || raw.isEmpty()) {
+            return Component.empty();
         }
 
-        return miniMessage.deserialize(rawText, TagResolver.resolver(resolvers));
+        String text = raw;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            text = text.replace("%" + entry.getKey() + "%", entry.getValue());
+            text = text.replace("<" + entry.getKey() + ">", entry.getValue());
+        }
+
+        Matcher matcher = HEX_PATTERN.matcher(text);
+        StringBuilder sb = new StringBuilder();
+        while (matcher.find()) {
+            String hex = matcher.group(1);
+            StringBuilder b = new StringBuilder("&x");
+            for (char c : hex.toCharArray()) {
+                b.append('&').append(c);
+            }
+            matcher.appendReplacement(sb, b.toString());
+        }
+        matcher.appendTail(sb);
+
+        return SERIALIZER.deserialize(sb.toString());
     }
 
-    public Component parse(String rawText) {
-        return parse(rawText, Map.of());
+    public Component format(String raw) {
+        return format(raw, Map.of());
     }
 }

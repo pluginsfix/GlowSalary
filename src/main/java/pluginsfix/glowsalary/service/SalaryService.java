@@ -1,12 +1,9 @@
 package pluginsfix.glowsalary.service;
 
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.sound.Sound;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.slf4j.Logger;
 import pluginsfix.glowsalary.config.SalaryConfig;
-import pluginsfix.glowsalary.domain.GroupSalaryConfig;
 import pluginsfix.glowsalary.domain.RewardOutcome;
 import pluginsfix.glowsalary.domain.SalaryCalculator;
 import pluginsfix.glowsalary.domain.SalaryProfile;
@@ -83,65 +80,61 @@ public final class SalaryService {
         UUID uuid = player.getUniqueId();
         SalaryProfile profile = profileCache.computeIfAbsent(uuid, SalaryProfile::initial);
 
-        String groupName = luckPermsHook.resolvePrimaryGroup(player, config.groups().keySet());
-        GroupSalaryConfig groupConfig = config.resolveGroup(groupName);
+        String rankName = luckPermsHook.resolvePrimaryGroup(player, config.ranks().keySet());
+        double rankBase = config.resolveRankBase(rankName);
 
         long now = Instant.now().getEpochSecond();
+        long cooldownDuration = profile.lastClaimEpochSeconds() == 0L
+            ? config.initialCooldownSeconds()
+            : config.cooldownSeconds();
+
         long remainingCooldown = SalaryCalculator.calculateRemainingCooldown(
             profile.lastClaimEpochSeconds(),
-            groupConfig.cooldownSeconds(),
+            cooldownDuration,
             now
         );
 
         if (remainingCooldown > 0L) {
-            double nextMoney = SalaryCalculator.calculateMoneySalary(groupConfig, profile.moneyStreak());
-            return new RewardOutcome.CooldownActive(remainingCooldown, nextMoney, groupConfig.groupName());
+            double nextMoney = SalaryCalculator.calculateMoneySalary(rankBase, config.growthPerClaim(), profile.moneyStreak());
+            int nextSapphire = SalaryCalculator.calculateSapphireSalary(config.sapphireBaseAmount(), config.sapphireGrowthPerClaim(), profile.sapphireStreak());
+            double roll = ThreadLocalRandom.current().nextDouble(0.0, 100.0);
+            boolean isNextSapphire = SalaryCalculator.shouldGiveSapphires(config.sapphireChance(), roll);
+
+            return new RewardOutcome.Cooldown(remainingCooldown, nextMoney, nextSapphire, isNextSapphire, rankName);
         }
 
         double roll = ThreadLocalRandom.current().nextDouble(0.0, 100.0);
-        boolean givesSapphires = SalaryCalculator.shouldGiveSapphires(config.sapphire(), roll);
+        boolean givesSapphires = SalaryCalculator.shouldGiveSapphires(config.sapphireChance(), roll);
 
         if (givesSapphires) {
-            int amount = SalaryCalculator.calculateSapphireSalary(config.sapphire(), profile.sapphireStreak());
+            int amount = SalaryCalculator.calculateSapphireSalary(config.sapphireBaseAmount(), config.sapphireGrowthPerClaim(), profile.sapphireStreak());
             SalaryProfile updated = profile.withSapphireClaim(amount, now);
             profileCache.put(uuid, updated);
             dirtyProfiles.add(uuid);
 
             scheduler.runForPlayer(player, () -> {
-                for (String rawCmd : config.sapphire().rewardCommands()) {
-                    String formatted = rawCmd
-                        .replace("<player>", player.getName())
-                        .replace("<amount>", String.valueOf(amount));
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), formatted);
-                }
-
-                String soundKey = config.sapphire().sound();
-                if (soundKey != null && !soundKey.isBlank()) {
-                    try {
-                        Key key = Key.key(soundKey);
-                        player.playSound(Sound.sound(key, Sound.Source.PLAYER, 1.0f, 1.0f));
-                    } catch (Exception e) {
-                        logger.warn("Invalid sound key configured: {}", soundKey);
-                    }
-                }
+                String cmd = config.sapphireCommand()
+                    .replace("%player%", player.getName())
+                    .replace("%amount%", String.valueOf(amount))
+                    .replace("<player>", player.getName())
+                    .replace("<amount>", String.valueOf(amount));
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
             });
 
             return new RewardOutcome.Sapphire(amount, updated.sapphireStreak());
         } else {
-            double amount = SalaryCalculator.calculateMoneySalary(groupConfig, profile.moneyStreak());
+            double amount = SalaryCalculator.calculateMoneySalary(rankBase, config.growthPerClaim(), profile.moneyStreak());
             SalaryProfile updated = profile.withMoneyClaim(amount, now);
             profileCache.put(uuid, updated);
             dirtyProfiles.add(uuid);
 
             scheduler.runForPlayer(player, () -> {
-                if (vaultHook.isAvailable()) {
-                    vaultHook.deposit(player, amount);
-                } else {
-                    Bukkit.dispatchCommand(
-                        Bukkit.getConsoleSender(),
-                        "eco give " + player.getName() + " " + (long) amount
-                    );
-                }
+                String cmd = config.moneyCommand()
+                    .replace("%player%", player.getName())
+                    .replace("%amount%", String.valueOf((long) amount))
+                    .replace("<player>", player.getName())
+                    .replace("<amount>", String.valueOf((long) amount));
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
             });
 
             return new RewardOutcome.Money(amount, updated.moneyStreak());

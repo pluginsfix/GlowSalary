@@ -1,72 +1,51 @@
-# ==============================================================================
-#                      GlowSalary - Конфигурация плагина
-#                Разработчик: pluginsfix | Платформа: Paper / Folia (Java 21)
-# ==============================================================================
+cooldown:
+  initial-seconds: 3600
+  seconds: 3600
 
-# Версия конфигурации для автоматической проверки совместимости. Не изменяйте.
-config-version: 1
+rewards:
+  base: 67000
+  growth-per-claim: 15000
 
-# Глобальный кулдаун между выплатами зарплаты по умолчанию (в секундах).
-# 7200 секунд = 2 часа.
-default-cooldown-seconds: 7200
-
-# Интервал автоматического сброса кеша профилей в базу данных SQLite (в минутах).
-auto-save-interval-minutes: 5
-
-# Настройки специальной зарплаты в сапфирах (выдаётся с определённым шансом вместо денег).
 sapphire:
-  # Включена ли механика сапфировых выплат.
-  enabled: true
+  chance: 10
+  base-amount: 5
+  growth-per-claim: 2
 
-  # Шанс выпадения сапфиров вместо обычной денежной зарплаты (в процентах от 0.0 до 100.0).
-  chance-percent: 15.0
+commands:
+  money: "eco give %player% %amount%"
+  sapphire: "p give %player% %amount%"
 
-  # Базовое количество сапфиров при первой выплате.
-  base-amount: 1
+ranks:
+  default: 67000
+  griefer: 100000
+  mustang: 150000
+  ghast: 200000
+  wither: 250000
+  kraken: 300000
+  dragon: 350000
+  stinger: 400000
+  eternity: 450000
+  infinity: 500000
+  youtube: 550000
+  stager: 600000
+  mlsotrudnik: 650000
+  sotrudnik: 700000
+  vedsotrudnik: 750000
+  spectator: 800000
+  stsotrudnik: 850000
+  zamkuratora: 900000
+  kurator: 950000
+  texadmin: 1000000
+  admin: 1050000
 
-  # Шаг увеличения количества сапфиров за каждую успешную сапфировую зарплату.
-  increment-per-claim: 1
-
-  # Максимальное количество сапфиров за одну выплату.
-  max-amount: 10
-
-  # Звуковой эффект при получении редкой сапфировой зарплаты (Minecraft sound key).
-  # Оставьте пустым (""), чтобы отключить звук.
-  sound: "entity.player.levelup"
-
-  # Консольные команды для начисления сапфиров игроку.
-  # Доступные плейсхолдеры: <player> (никнейм), <amount> (количество).
-  reward-commands:
-    - 'minecraft:give <player> minecraft:lapis_lazuli[minecraft:custom_name=''{"text":"Сапфир","color":"#38bdf8","bold":true}'',minecraft:lore=[''{"text":"Редкая валюта сервера","color":"gray"}'']] <amount>'
-
-# Настройки денежных выплат по группам прав (LuckPerms).
-# Если игрок не состоит ни в одной из перечисленных групп, используется группа 'default'.
-# Если игрок состоит в нескольких группах, выбирается группа с наибольшим приоритетом в LuckPerms.
-groups:
-  default:
-    # Базовый размер первой выплаты.
-    base-salary: 150.0
-    # На сколько монет увеличивается зарплата после каждой выплаты.
-    increment-per-claim: 15.0
-    # Максимальный возможный размер зарплаты.
-    max-salary: 600.0
-    # Индивидуальный кулдаун для данной группы (в секундах). 0 — использовать default-cooldown-seconds.
-    cooldown-seconds: 7200
-
-  vip:
-    base-salary: 300.0
-    increment-per-claim: 30.0
-    max-salary: 1200.0
-    cooldown-seconds: 5400
-
-  premium:
-    base-salary: 500.0
-    increment-per-claim: 50.0
-    max-salary: 2500.0
-    cooldown-seconds: 3600
-
-  deluxe:
-    base-salary: 1000.0
-    increment-per-claim: 100.0
-    max-salary: 5000.0
-    cooldown-seconds: 1800
+messages:
+  money-received: "&#FF7000▶&f Вы получили зарплату в размере &#FFC900%amount% &6¤ (монет)"
+  not-ready-money: "&#FF7000▶&f Следующая ваша зарплата через &#FF7000%time%. &fсоставит &#FFC900%amount% &6¤ (монет)"
+  not-ready-sapphire: "&#FF7000▶&f Следующая ваша зарплата через &#FF7000%time%. &fсоставит &#fb0fd4%amount% сапфиров ☀"
+  sapphire-received: "&#FF7000▶&f Вы получили зарплату в размере &#fb0fd4%amount% сапфиров ☀"
+  reload-success: "&#FF7000▶&a Конфигурация успешно перезагружена!"
+  reset-success: "&#FF7000▶&a Прогресс игрока &e%player% &aуспешно сброшен!"
+  player-not-found: "&#FF7000▶&c Игрок &e%player% &cне найден!"
+  unknown-command: "&#FF7000▶&c Неизвестная подкоманда! Используйте: &e/salary reload &cили &e/salary reset <игрок>"
+  no-permission: "&#FF7000▶&c У вас нет прав для выполнения этой команды!"
+  only-player: "&#FF7000▶&c Эта команда доступна только игрокам!"

@@ -1,8 +1,6 @@
 package pluginsfix.glowsalary;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
@@ -17,7 +15,6 @@ import pluginsfix.glowsalary.service.SalaryService;
 import pluginsfix.glowsalary.storage.SqliteSalaryRepository;
 import pluginsfix.glowsalary.text.MessageService;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -34,11 +31,9 @@ public final class GlowSalary extends JavaPlugin {
         logger.info("Enabling GlowSalary by pluginsfix...");
 
         saveDefaultConfig();
-        saveDefaultMessages();
 
         SalaryConfig config = SalaryConfig.fromYaml(getConfig());
-        FileConfiguration messagesYaml = loadMessagesYaml();
-        this.messageService = new MessageService(messagesYaml);
+        this.messageService = new MessageService(getConfig());
 
         this.scheduler = new PlatformScheduler(this);
 
@@ -47,16 +42,14 @@ public final class GlowSalary extends JavaPlugin {
 
         LuckPermsHook luckPermsHook = new LuckPermsHook();
         if (luckPermsHook.isAvailable()) {
-            logger.info("LuckPerms detected! Group-based salaries enabled.");
+            logger.info("LuckPerms detected! Rank-based salaries enabled.");
         } else {
-            logger.warn("LuckPerms not found! Using default group configuration.");
+            logger.warn("LuckPerms not found! Using default rank configuration.");
         }
 
         VaultHook vaultHook = new VaultHook();
         if (vaultHook.isAvailable()) {
-            logger.info("Vault Economy detected! Direct economy deposits enabled.");
-        } else {
-            logger.warn("Vault Economy not found! Fallback to console command for money payments.");
+            logger.info("Vault Economy detected!");
         }
 
         this.salaryService = new SalaryService(
@@ -87,7 +80,7 @@ public final class GlowSalary extends JavaPlugin {
         );
         Bukkit.getCommandMap().register(getName(), command);
 
-        long autoSaveSeconds = Math.max(60L, config.autoSaveIntervalMinutes() * 60L);
+        long autoSaveSeconds = 300L;
         scheduler.runTimerAsync(salaryService::saveDirtyProfiles, autoSaveSeconds, autoSaveSeconds);
 
         logger.info("GlowSalary v{} successfully enabled! Platform: {}",
@@ -109,23 +102,6 @@ public final class GlowSalary extends JavaPlugin {
         reloadConfig();
         SalaryConfig newConfig = SalaryConfig.fromYaml(getConfig());
         salaryService.updateConfig(newConfig);
-
-        FileConfiguration messagesYaml = loadMessagesYaml();
-        messageService.reload(messagesYaml);
-    }
-
-    private void saveDefaultMessages() {
-        File file = new File(getDataFolder(), "messages.yml");
-        if (!file.exists()) {
-            saveResource("messages.yml", false);
-        }
-    }
-
-    private FileConfiguration loadMessagesYaml() {
-        File file = new File(getDataFolder(), "messages.yml");
-        if (!file.exists()) {
-            saveDefaultMessages();
-        }
-        return YamlConfiguration.loadConfiguration(file);
+        messageService.reload(getConfig());
     }
 }
