@@ -24,7 +24,7 @@ class SalaryCalculatorTest {
         GroupSalaryConfig group = new GroupSalaryConfig("default", 150.0, 15.0, 600.0, 7200L);
         double salaryStreak3 = SalaryCalculator.calculateMoneySalary(group, 3);
 
-        assertThat(salaryStreak3).isEqualTo(195.0); // 150 + 3 * 15 = 195
+        assertThat(salaryStreak3).isEqualTo(195.0);
     }
 
     @Test
@@ -52,7 +52,7 @@ class SalaryCalculatorTest {
     @DisplayName("Кулдаун корректно рассчитывает оставшиеся секунды")
     void calculatesRemainingCooldown() {
         long lastClaim = 1000L;
-        long cooldown = 3600L; // ready at 4600L
+        long cooldown = 3600L;
 
         long remainingAt2000 = SalaryCalculator.calculateRemainingCooldown(lastClaim, cooldown, 2000L);
         assertThat(remainingAt2000).isEqualTo(2600L);

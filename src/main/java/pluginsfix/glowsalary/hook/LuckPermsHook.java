@@ -39,7 +39,6 @@ public final class LuckPermsHook {
             return "default";
         }
 
-        // Find matching group with highest LuckPerms weight
         String highestGroup = user.getNodes().stream()
             .filter(node -> node instanceof InheritanceNode)
             .map(node -> ((InheritanceNode) node).getGroupName().toLowerCase())

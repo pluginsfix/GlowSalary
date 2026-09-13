@@ -68,18 +68,15 @@ public final class GlowSalary extends JavaPlugin {
             logger
         );
 
-        // Register event listener
         getServer().getPluginManager().registerEvents(
             new PlayerConnectionListener(salaryService),
             this
         );
 
-        // Preload any currently online players (useful on reload/hot-load)
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             salaryService.loadPlayerProfile(onlinePlayer.getUniqueId());
         }
 
-        // Register /salary and /glowsalary commands
         SalaryCommand salaryCommand = new SalaryCommand(salaryService, messageService, this::reload);
         CustomSalaryCommand command = new CustomSalaryCommand(
             "salary",
@@ -90,7 +87,6 @@ public final class GlowSalary extends JavaPlugin {
         );
         Bukkit.getCommandMap().register(getName(), command);
 
-        // Setup auto-save task
         long autoSaveSeconds = Math.max(60L, config.autoSaveIntervalMinutes() * 60L);
         scheduler.runTimerAsync(salaryService::saveDirtyProfiles, autoSaveSeconds, autoSaveSeconds);
 

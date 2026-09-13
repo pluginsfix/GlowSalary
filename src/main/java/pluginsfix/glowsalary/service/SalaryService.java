@@ -137,7 +137,6 @@ public final class SalaryService {
                 if (vaultHook.isAvailable()) {
                     vaultHook.deposit(player, amount);
                 } else {
-                    // Fallback to console command if Vault economy is not registered
                     Bukkit.dispatchCommand(
                         Bukkit.getConsoleSender(),
                         "eco give " + player.getName() + " " + (long) amount

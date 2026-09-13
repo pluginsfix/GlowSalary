@@ -37,7 +37,6 @@ public final class PlatformScheduler {
         }
 
         try {
-            // Paper 1.20+ and Folia both have player.getScheduler()
             player.getScheduler().run(plugin, scheduledTask -> task.run(), null);
         } catch (NoSuchMethodError | UnsupportedOperationException e) {
             Bukkit.getScheduler().runTask(plugin, task);
