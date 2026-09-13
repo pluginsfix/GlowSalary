@@ -1,0 +1,24 @@
+name: GlowSalary
+version: '1.0.0'
+main: pluginsfix.glowsalary.GlowSalaryPlugin
+api-version: '1.21'
+author: pluginsfix
+description: Продвинутая система зарплат для Paper и Folia с прогрессией и сапфировыми бонусами
+folia-supported: true
+
+dependencies:
+  server:
+    LuckPerms:
+      load: BEFORE
+      required: false
+    Vault:
+      load: BEFORE
+      required: false
+
+permissions:
+  glowsalary.use:
+    description: Доступ к получению зарплаты (/salary)
+    default: true
+  glowsalary.admin:
+    description: Доступ к управлению плагином (/glowsalary reload, reset)
+    default: op
