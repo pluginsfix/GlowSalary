@@ -5,6 +5,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import pluginsfix.glowsalary.domain.SalaryProfile;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -58,6 +60,15 @@ public final class SqliteSalaryRepository implements SalaryRepository {
     public SqliteSalaryRepository(Path databasePath, Logger logger) {
         this.logger = logger;
         this.ioExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
+        try {
+            Path parent = databasePath.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                Files.createDirectories(parent);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to create database directory for {}", databasePath, e);
+        }
 
         HikariConfig config = new HikariConfig();
         config.setPoolName("GlowSalary-SQLite-Pool");

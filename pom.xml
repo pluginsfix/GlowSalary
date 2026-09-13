@@ -6,7 +6,7 @@
 
     <groupId>pluginsfix.glowsalary</groupId>
     <artifactId>GlowSalary</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <name>GlowSalary</name>
@@ -177,10 +177,6 @@
                                 <relocation>
                                     <pattern>com.zaxxer.hikari</pattern>
                                     <shadedPattern>pluginsfix.glowsalary.lib.hikari</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.sqlite</pattern>
-                                    <shadedPattern>pluginsfix.glowsalary.lib.sqlite</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

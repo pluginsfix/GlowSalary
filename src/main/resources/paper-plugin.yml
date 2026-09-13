@@ -1,5 +1,5 @@
 name: GlowSalary
-version: '1.0.2'
+version: '1.0.3'
 main: pluginsfix.glowsalary.GlowSalary
 api-version: '1.21'
 author: pluginsfix
