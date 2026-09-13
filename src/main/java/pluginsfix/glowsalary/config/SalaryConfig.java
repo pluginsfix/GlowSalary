@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public record PluginConfig(
+public record SalaryConfig(
     int configVersion,
     long defaultCooldownSeconds,
     int autoSaveIntervalMinutes,
@@ -19,7 +19,7 @@ public record PluginConfig(
     Map<String, GroupSalaryConfig> groups
 ) {
 
-    public PluginConfig {
+    public SalaryConfig {
         Objects.requireNonNull(sapphire, "sapphire must not be null");
         Objects.requireNonNull(groups, "groups must not be null");
         if (groups.isEmpty()) {
@@ -27,7 +27,7 @@ public record PluginConfig(
         }
     }
 
-    public static PluginConfig fromYaml(FileConfiguration yaml) {
+    public static SalaryConfig fromYaml(FileConfiguration yaml) {
         int configVersion = yaml.getInt("config-version", 1);
         long defaultCooldownSeconds = yaml.getLong("default-cooldown-seconds", 7200L);
         int autoSaveIntervalMinutes = yaml.getInt("auto-save-interval-minutes", 5);
@@ -73,7 +73,7 @@ public record PluginConfig(
             groupMap.put("default", new GroupSalaryConfig("default", 100.0, 10.0, 500.0, defaultCooldownSeconds));
         }
 
-        return new PluginConfig(
+        return new SalaryConfig(
             configVersion,
             defaultCooldownSeconds,
             autoSaveIntervalMinutes,

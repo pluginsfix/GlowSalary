@@ -5,7 +5,7 @@ import net.kyori.adventure.sound.Sound;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.slf4j.Logger;
-import pluginsfix.glowsalary.config.PluginConfig;
+import pluginsfix.glowsalary.config.SalaryConfig;
 import pluginsfix.glowsalary.domain.GroupSalaryConfig;
 import pluginsfix.glowsalary.domain.RewardOutcome;
 import pluginsfix.glowsalary.domain.SalaryCalculator;
@@ -32,7 +32,7 @@ public final class SalaryService {
     private final LuckPermsHook luckPermsHook;
     private final VaultHook vaultHook;
     private final Logger logger;
-    private volatile PluginConfig config;
+    private volatile SalaryConfig config;
 
     private final Map<UUID, SalaryProfile> profileCache = new ConcurrentHashMap<>();
     private final Set<UUID> dirtyProfiles = ConcurrentHashMap.newKeySet();
@@ -42,7 +42,7 @@ public final class SalaryService {
         PlatformScheduler scheduler,
         LuckPermsHook luckPermsHook,
         VaultHook vaultHook,
-        PluginConfig initialConfig,
+        SalaryConfig initialConfig,
         Logger logger
     ) {
         this.repository = repository;
@@ -53,11 +53,11 @@ public final class SalaryService {
         this.logger = logger;
     }
 
-    public void updateConfig(PluginConfig newConfig) {
+    public void updateConfig(SalaryConfig newConfig) {
         this.config = newConfig;
     }
 
-    public PluginConfig getConfig() {
+    public SalaryConfig getConfig() {
         return config;
     }
 

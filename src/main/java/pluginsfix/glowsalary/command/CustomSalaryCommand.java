@@ -8,12 +8,12 @@ import org.bukkit.command.TabCompleter;
 import java.util.List;
 import java.util.Objects;
 
-public final class CustomPluginCommand extends Command {
+public final class CustomSalaryCommand extends Command {
 
     private final CommandExecutor executor;
     private final TabCompleter completer;
 
-    public CustomPluginCommand(
+    public CustomSalaryCommand(
         String name,
         String description,
         List<String> aliases,

@@ -6,9 +6,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
-import pluginsfix.glowsalary.command.CustomPluginCommand;
+import pluginsfix.glowsalary.command.CustomSalaryCommand;
 import pluginsfix.glowsalary.command.SalaryCommand;
-import pluginsfix.glowsalary.config.PluginConfig;
+import pluginsfix.glowsalary.config.SalaryConfig;
 import pluginsfix.glowsalary.hook.LuckPermsHook;
 import pluginsfix.glowsalary.hook.VaultHook;
 import pluginsfix.glowsalary.listener.PlayerConnectionListener;
@@ -21,7 +21,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 
-public final class GlowSalaryPlugin extends JavaPlugin {
+public final class GlowSalary extends JavaPlugin {
 
     private PlatformScheduler scheduler;
     private SqliteSalaryRepository repository;
@@ -36,7 +36,7 @@ public final class GlowSalaryPlugin extends JavaPlugin {
         saveDefaultConfig();
         saveDefaultMessages();
 
-        PluginConfig pluginConfig = PluginConfig.fromYaml(getConfig());
+        SalaryConfig config = SalaryConfig.fromYaml(getConfig());
         FileConfiguration messagesYaml = loadMessagesYaml();
         this.messageService = new MessageService(messagesYaml);
 
@@ -64,7 +64,7 @@ public final class GlowSalaryPlugin extends JavaPlugin {
             scheduler,
             luckPermsHook,
             vaultHook,
-            pluginConfig,
+            config,
             logger
         );
 
@@ -80,8 +80,8 @@ public final class GlowSalaryPlugin extends JavaPlugin {
         }
 
         // Register /salary and /glowsalary commands
-        SalaryCommand salaryCommand = new SalaryCommand(salaryService, messageService, this::reloadPlugin);
-        CustomPluginCommand command = new CustomPluginCommand(
+        SalaryCommand salaryCommand = new SalaryCommand(salaryService, messageService, this::reload);
+        CustomSalaryCommand command = new CustomSalaryCommand(
             "salary",
             "Получить регулярную зарплату",
             List.of("glowsalary"),
@@ -91,7 +91,7 @@ public final class GlowSalaryPlugin extends JavaPlugin {
         Bukkit.getCommandMap().register(getName(), command);
 
         // Setup auto-save task
-        long autoSaveSeconds = Math.max(60L, pluginConfig.autoSaveIntervalMinutes() * 60L);
+        long autoSaveSeconds = Math.max(60L, config.autoSaveIntervalMinutes() * 60L);
         scheduler.runTimerAsync(salaryService::saveDirtyProfiles, autoSaveSeconds, autoSaveSeconds);
 
         logger.info("GlowSalary v{} successfully enabled! Platform: {}",
@@ -109,9 +109,9 @@ public final class GlowSalaryPlugin extends JavaPlugin {
         getLogger().info("GlowSalary successfully disabled.");
     }
 
-    private void reloadPlugin() {
+    private void reload() {
         reloadConfig();
-        PluginConfig newConfig = PluginConfig.fromYaml(getConfig());
+        SalaryConfig newConfig = SalaryConfig.fromYaml(getConfig());
         salaryService.updateConfig(newConfig);
 
         FileConfiguration messagesYaml = loadMessagesYaml();
